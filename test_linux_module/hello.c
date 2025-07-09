@@ -3,20 +3,18 @@
 #include <linux/init.h> // 包含初始化相关的头文件，提供__init和__exit宏
 
 MODULE_LICENSE("GPL"); // 声明模块的许可证
-MODULE_AUTHOR("Your Name"); // 声明模块的作者
+MODULE_AUTHOR("Luyi Zhang"); // 声明模块的作者
 MODULE_DESCRIPTION("A simple hello world module"); // 声明模块的描述
 MODULE_VERSION("0.1"); // 声明模块的版本
 
-static int __init init_module(void)
-{
+static int __init hello_init(void) {
     printk(KERN_INFO "Hello, World!\n");
     return 0;
 }
 
-static void __exit cleanup_module(void)
-{
+static void __exit hello_exit(void) {
     printk(KERN_INFO "Goodbye, World!\n");
 }
 
-module_init(init_module); // 注册模块的初始化函数
-module_exit(cleanup_module); // 注册模块的清理函数
+module_init(hello_init);
+module_exit(hello_exit);
