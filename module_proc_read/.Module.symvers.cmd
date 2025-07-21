@@ -1,0 +1,1 @@
+savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/Module.symvers -T /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/modules.order -i Module.symvers -e 

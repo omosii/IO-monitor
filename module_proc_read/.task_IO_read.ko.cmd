@@ -1,0 +1,1 @@
+savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.ko /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.mod.o

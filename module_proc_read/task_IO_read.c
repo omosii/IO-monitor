@@ -41,12 +41,24 @@ static void show_task_info(struct seq_file *m, struct task_struct *task)
     write_bytes = task->ioac.write_bytes; // 写入字节数
 #endif
 
+    // 获取进程状态（兼容不同内核版本）
+    long state;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,14,0)
+    #ifdef READ_ONCE
+        state = READ_ONCE(task->__state);
+    #else
+        state = task->__state;
+    #endif
+#else
+    state = task->state;
+#endif
+
     // 输出进程信息到seq_file
     seq_printf(m,
         "%-7d %-16s %-7ld %-7d %-7d %-9lu %-9lu %-10lu %-10lu\n",
         task->pid,  // 进程ID
         task->comm, // 进程名称
-        task->state, // 进程状态
+        state, // 进程状态
         task->real_parent ? task->real_parent->pid : 0, // 父进程ID
         __kuid_val(task->cred->uid), // 用户ID
         vm_size / 1024, // 虚拟内存大小（KB）
@@ -89,16 +101,25 @@ static int task_io_proc_open(struct inode *inode, struct file *file)
     return single_open(file, task_io_seq_show, NULL);
 }
 
-// 这段代码定义了 /proc/task_io_info 文件的 file_operations 结构体。
-// file_operations 结构体用于描述 proc 文件的操作方法，包括打开、读取、定位等。
-// 当你用 cat /proc/task_io_info 时，内核会调用这个结构体中的方法来处理文件操作。
-static const struct file_operations task_io_proc_fops = {
-    .owner = THIS_MODULE, // 设置文件操作的拥有者
-    .open = task_io_proc_open, // 设置打开文件的操作
-    .read = seq_read, // 设置读取文件的操作
-    .llseek = seq_lseek, // 设置文件定位的操作
-    .release = single_release, // 设置释放文件的操作
+// 兼容不同内核版本的proc文件操作结构体
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
+// 新版本内核使用 proc_ops 结构体
+static const struct proc_ops task_io_proc_fops = {
+    .proc_open = task_io_proc_open,
+    .proc_read = seq_read,
+    .proc_lseek = seq_lseek,
+    .proc_release = single_release,
 };
+#else
+// 旧版本内核使用 file_operations 结构体
+static const struct file_operations task_io_proc_fops = {
+    .owner = THIS_MODULE,
+    .open = task_io_proc_open,
+    .read = seq_read,
+    .llseek = seq_lseek,
+    .release = single_release,
+};
+#endif
 
 static int __init task_io_read_init(void)
 {
