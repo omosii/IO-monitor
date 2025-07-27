@@ -1,0 +1,1 @@
+savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/v2/io_monitorv2.mod := printf '%s\n'   io_monitorv2.o | awk '!x[$$0]++ { print("/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/v2/"$$0) }' > /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/v2/io_monitorv2.mod

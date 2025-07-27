@@ -1,0 +1,1 @@
+savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/v2/io_monitorv2.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/v2/io_monitorv2.ko /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/v2/io_monitorv2.o /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/v2/io_monitorv2.mod.o

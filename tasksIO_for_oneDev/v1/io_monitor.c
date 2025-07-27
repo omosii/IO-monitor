@@ -2,6 +2,13 @@
 #include <linux/fs.h> // 包含文件系统相关的函数和结构体
 #include <linux/uaccess.h>  // 包含用户空间访问相关的函数和宏   
 #include <linux/blkdev.h> // 包含块设备相关的函数和结构体
+// 添加缺失的头文件
+#include <linux/fdtable.h>    // 用于 files_fdtable
+#include <linux/file.h>       // 用于 fget
+#include <linux/blk_types.h>  // 用于块设备相关类型
+#include <linux/buffer_head.h>  // 添加这个头文件
+#include <linux/init.h>         // 添加这个头文件
+#include <linux/part_stat.h>    // 添加这个头文件
 
 static char target_device[DISK_NAME_LEN]; // 受统计设备名
 module_param_string(device, target_device, DISK_NAME_LEN, 0644);
@@ -10,6 +17,59 @@ module_param_string(device, target_device, DISK_NAME_LEN, 0644);
     虽然模块会正常加载，但会在 dmesg 中打印一个空设备名称
     模块可能无法正确过滤特定设备的 I/O 操作
  */
+
+// 定义全局设备信息结构体
+struct device_info target_dev_info = {0};
+
+// 获取指定设备的 I/O 统计信息
+static void get_dev_io_stats(struct task_struct *task, unsigned long *read_bytes, unsigned long *write_bytes)
+{
+    struct task_struct *thread;
+    struct inode *inode;
+    struct file *file;
+    struct fdtable *fdt;
+    int i;
+    
+    *read_bytes = 0;
+    *write_bytes = 0;
+
+    // 如果设备无效，直接返回
+    if (!target_dev_info.valid)
+        return;
+
+    // 遍历进程的所有线程
+    thread = task;
+    do {
+        // 遍历进程打开的所有文件
+        task_lock(thread);
+        if (thread->files) {
+            fdt = files_fdtable(thread->files);
+            if (fdt) {
+                for (i = 0; i < fdt->max_fds; i++) {
+                    file = fdt->fd[i];
+                    if (!file)
+                        continue;
+                        
+                    inode = file->f_inode;
+                    if (!inode)
+                        continue;
+                        
+                    // 检查是否是目标设备的文件
+                    if (inode->i_sb && inode->i_sb->s_dev == target_dev_info.dev) {
+                        // 使用 u64 类型来存储 IO 统计
+                        u64 rbytes = thread->ioac.read_bytes;
+                        u64 wbytes = thread->ioac.write_bytes;
+                        
+                        *read_bytes += rbytes;
+                        *write_bytes += wbytes;
+                        // break;
+                    }
+                }
+            }
+        }
+        task_unlock(thread);
+    } while_each_thread(task, thread);
+}
 
 static int io_monitor_show(struct seq_file *m, void *v)
 {
@@ -21,14 +81,21 @@ static int io_monitor_show(struct seq_file *m, void *v)
               "COMM", "PID", "PARENT_COMM", "PPID", "READ(bytes)", "WRITE(bytes)");
     seq_puts(m, "----------------------------------------------------------------------------\n");
     
+    // 在 io_monitor_show 函数中添加设备信息输出
+    seq_printf(m, "Monitoring device: %s (dev_t: %u:%u)\n", 
+               target_device,
+               MAJOR(target_dev_info.dev),
+               MINOR(target_dev_info.dev));
+    
     rcu_read_lock();
     for_each_process(task) {
         struct task_io_stats stats = {
             .pid = task->pid,
-            .ppid = task->real_parent ? task->real_parent->pid : 0,
-            .read_bytes = task->ioac.read_bytes,
-            .write_bytes = task->ioac.write_bytes
+            .ppid = task->real_parent ? task->real_parent->pid : 0
         };
+        
+        // 获取指定设备的 I/O 统计
+        get_dev_io_stats(task, &stats.read_bytes, &stats.write_bytes);
         
         get_task_comm(stats.comm, task);
         
@@ -77,8 +144,29 @@ static const struct file_operations io_monitor_fops = {
 
 static int __init io_monitor_init(void)
 {
+    // struct block_device *bdev;
+    dev_t dev;
+    int ret;
+
+    // 检查设备名是否为空
+    if (strlen(target_device) == 0) {
+        printk(KERN_ERR "IO Monitor: No target device specified\n");
+        return -EINVAL;
+    }
+
+    ret = lookup_bdev(target_device, &dev);
+    if (ret) {
+        printk(KERN_ERR "IO Monitor: Cannot find device %s\n", target_device);
+        return ret;
+    }
+
+    // 直接使用找到的设备号，不尝试获取块设备
+    target_dev_info.dev = dev;
+    target_dev_info.valid = true;
+
     if (!proc_create(PROC_ENTRY_NAME, 0, NULL, &io_monitor_fops))
         return -ENOMEM;
+        
     printk(KERN_INFO "IO Monitor: module loaded for device %s\n", target_device);
     return 0;
 }

@@ -29,4 +29,12 @@ struct task_io_stats {
  */
 #endif
 
+// 添加设备相关结构体
+struct device_info {
+    dev_t dev;           // 设备号
+    bool valid;          // 设备是否有效
+};
+
+extern struct device_info target_dev_info;
+
 #endif /* IO_MONITOR_H */
