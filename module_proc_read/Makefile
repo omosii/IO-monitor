@@ -44,7 +44,9 @@ dmesg:
 	dmesg | tail -20
 
 # 查看proc文件内容
-test:
+display_all:
+	cat /proc/task_io_info
+display_user:
 	cat /proc/task_io_info
 
 # 显示帮助信息

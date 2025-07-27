@@ -1,9 +1,8 @@
-savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o := gcc-12 -Wp,-MMD,/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/.task_IO_read.o.d -nostdinc -I./arch/x86/include -I./arch/x86/include/generated  -I./include -I./arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I./include/uapi -I./include/generated/uapi -include ./include/linux/compiler-version.h -include ./include/linux/kconfig.h -I./ubuntu/include -include ./include/linux/compiler_types.h -D__KERNEL__ -fmacro-prefix-map=./= -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=none -m64 -falign-jumps=1 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -Wno-sign-compare -fno-asynchronous-unwind-tables -mindirect-branch=thunk-extern -mindirect-branch-register -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -fno-jump-tables -mharden-sls=all -fpatchable-function-entry=16,16 -fno-delete-null-pointer-checks -O2 -fno-allow-store-data-races -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls -ftrivial-auto-var-init=zero -fno-stack-clash-protection -fzero-call-used-regs=used-gpr -pg -mrecord-mcount -mfentry -DCC_USING_FENTRY -falign-functions=16 -fno-strict-overflow -fno-stack-check -fconserve-stack -Wall -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wmissing-declarations -Wmissing-prototypes -Wframe-larger-than=1024 -Wno-main -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-dangling-pointer -Wvla -Wno-pointer-sign -Wcast-function-type -Wno-stringop-overflow -Wno-array-bounds -Wno-alloc-size-larger-than -Wimplicit-fallthrough=5 -Werror=date-time -Werror=incompatible-pointer-types -Werror=designated-init -Wenum-conversion -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-restrict -Wno-packed-not-aligned -Wno-format-overflow -Wno-format-truncation -Wno-stringop-truncation -Wno-override-init -Wno-missing-field-initializers -Wno-type-limits -Wno-shift-negative-value -Wno-maybe-uninitialized -Wno-sign-compare -g -gdwarf-5  -fsanitize=bounds-strict -fsanitize=shift -fsanitize=bool -fsanitize=enum  -DMODULE  -DKBUILD_BASENAME='"task_IO_read"' -DKBUILD_MODNAME='"task_IO_read"' -D__KBUILD_MODNAME=kmod_task_IO_read -c -o /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.c   ; ./tools/objtool/objtool --hacks=jump_label --hacks=noinstr --hacks=skylake --retpoline --rethunk --sls --stackval --static-call --uaccess --prefix=16   --module /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o
+savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o := gcc-12 -Wp,-MMD,/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/.io_monitor.o.d -nostdinc -I./arch/x86/include -I./arch/x86/include/generated  -I./include -I./arch/x86/include/uapi -I./arch/x86/include/generated/uapi -I./include/uapi -I./include/generated/uapi -include ./include/linux/compiler-version.h -include ./include/linux/kconfig.h -I./ubuntu/include -include ./include/linux/compiler_types.h -D__KERNEL__ -fmacro-prefix-map=./= -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=none -m64 -falign-jumps=1 -falign-loops=1 -mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3 -mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel -Wno-sign-compare -fno-asynchronous-unwind-tables -mindirect-branch=thunk-extern -mindirect-branch-register -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -fno-jump-tables -mharden-sls=all -fpatchable-function-entry=16,16 -fno-delete-null-pointer-checks -O2 -fno-allow-store-data-races -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls -ftrivial-auto-var-init=zero -fno-stack-clash-protection -fzero-call-used-regs=used-gpr -pg -mrecord-mcount -mfentry -DCC_USING_FENTRY -falign-functions=16 -fno-strict-overflow -fno-stack-check -fconserve-stack -Wall -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wmissing-declarations -Wmissing-prototypes -Wframe-larger-than=1024 -Wno-main -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-dangling-pointer -Wvla -Wno-pointer-sign -Wcast-function-type -Wno-stringop-overflow -Wno-array-bounds -Wno-alloc-size-larger-than -Wimplicit-fallthrough=5 -Werror=date-time -Werror=incompatible-pointer-types -Werror=designated-init -Wenum-conversion -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-restrict -Wno-packed-not-aligned -Wno-format-overflow -Wno-format-truncation -Wno-stringop-truncation -Wno-override-init -Wno-missing-field-initializers -Wno-type-limits -Wno-shift-negative-value -Wno-maybe-uninitialized -Wno-sign-compare -g -gdwarf-5  -fsanitize=bounds-strict -fsanitize=shift -fsanitize=bool -fsanitize=enum  -DMODULE  -DKBUILD_BASENAME='"io_monitor"' -DKBUILD_MODNAME='"io_monitor"' -D__KBUILD_MODNAME=kmod_io_monitor -c -o /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.c   ; ./tools/objtool/objtool --hacks=jump_label --hacks=noinstr --hacks=skylake --retpoline --rethunk --sls --stackval --static-call --uaccess --prefix=16   --module /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o
 
-source_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o := /home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.c
+source_/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o := /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.c
 
-deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o := \
-    $(wildcard include/config/TASK_IO_ACCOUNTING) \
+deps_/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o := \
   include/linux/compiler-version.h \
     $(wildcard include/config/CC_VERSION_TEXT) \
   include/linux/kconfig.h \
@@ -27,6 +26,7 @@ deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o := \
     $(wildcard include/config/ARCH_USE_BUILTIN_BSWAP) \
     $(wildcard include/config/SHADOW_CALL_STACK) \
     $(wildcard include/config/KCOV) \
+  /home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.h \
   include/linux/module.h \
     $(wildcard include/config/MODULES) \
     $(wildcard include/config/SYSFS) \
@@ -856,6 +856,7 @@ deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o := \
   include/uapi/asm-generic/siginfo.h \
   include/linux/syscall_user_dispatch_types.h \
   include/linux/task_io_accounting.h \
+    $(wildcard include/config/TASK_IO_ACCOUNTING) \
   include/linux/posix-timers_types.h \
   include/uapi/linux/rseq.h \
   include/linux/kcsan.h \
@@ -1036,6 +1037,23 @@ deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o := \
   include/linux/string_helpers.h \
   include/linux/ctype.h \
   include/linux/string_choices.h \
+  include/generated/uapi/linux/version.h \
+  include/linux/blkdev.h \
+    $(wildcard include/config/BLOCK_HOLDER_DEPRECATED) \
+    $(wildcard include/config/BLK_DEV_ZONED) \
+    $(wildcard include/config/CDROM) \
+    $(wildcard include/config/BLK_DEV_INTEGRITY) \
+    $(wildcard include/config/PM) \
+    $(wildcard include/config/BLK_INLINE_ENCRYPTION) \
+    $(wildcard include/config/BLK_DEV_THROTTLING) \
+    $(wildcard include/config/BLK_RQ_ALLOC_TIME) \
+  include/linux/blk_types.h \
+    $(wildcard include/config/FAIL_MAKE_REQUEST) \
+    $(wildcard include/config/BLK_CGROUP_IOCOST) \
+  include/linux/bvec.h \
+  include/linux/highmem.h \
+  include/linux/cacheflush.h \
+  arch/x86/include/asm/cacheflush.h \
   include/linux/mm.h \
     $(wildcard include/config/HAVE_ARCH_MMAP_RND_BITS) \
     $(wildcard include/config/HAVE_ARCH_MMAP_RND_COMPAT_BITS) \
@@ -1091,10 +1109,75 @@ deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o := \
   include/linux/vm_event_item.h \
     $(wildcard include/config/MEMORY_BALLOON) \
     $(wildcard include/config/BALLOON_COMPACTION) \
-  include/generated/uapi/linux/version.h \
+  include/asm-generic/cacheflush.h \
+  include/linux/kmsan.h \
+  include/linux/dma-direction.h \
+  include/linux/hardirq.h \
+  include/linux/context_tracking_state.h \
+    $(wildcard include/config/CONTEXT_TRACKING_USER) \
+    $(wildcard include/config/CONTEXT_TRACKING) \
+  include/linux/ftrace_irq.h \
+    $(wildcard include/config/HWLAT_TRACER) \
+    $(wildcard include/config/OSNOISE_TRACER) \
+  include/linux/vtime.h \
+    $(wildcard include/config/VIRT_CPU_ACCOUNTING) \
+    $(wildcard include/config/IRQ_TIME_ACCOUNTING) \
+  arch/x86/include/asm/hardirq.h \
+    $(wildcard include/config/KVM_INTEL) \
+    $(wildcard include/config/HAVE_KVM) \
+    $(wildcard include/config/X86_THERMAL_VECTOR) \
+    $(wildcard include/config/X86_MCE_THRESHOLD) \
+    $(wildcard include/config/X86_MCE_AMD) \
+    $(wildcard include/config/X86_HV_CALLBACK_VECTOR) \
+    $(wildcard include/config/HYPERV) \
+  include/linux/highmem-internal.h \
+  include/linux/device.h \
+    $(wildcard include/config/HAS_IOMEM) \
+    $(wildcard include/config/GENERIC_MSI_IRQ) \
+    $(wildcard include/config/ENERGY_MODEL) \
+    $(wildcard include/config/PINCTRL) \
+    $(wildcard include/config/DMA_OPS) \
+    $(wildcard include/config/DMA_DECLARE_COHERENT) \
+    $(wildcard include/config/DMA_CMA) \
+    $(wildcard include/config/SWIOTLB) \
+    $(wildcard include/config/SWIOTLB_DYNAMIC) \
+    $(wildcard include/config/ARCH_HAS_SYNC_DMA_FOR_DEVICE) \
+    $(wildcard include/config/ARCH_HAS_SYNC_DMA_FOR_CPU) \
+    $(wildcard include/config/ARCH_HAS_SYNC_DMA_FOR_CPU_ALL) \
+    $(wildcard include/config/DMA_OPS_BYPASS) \
+    $(wildcard include/config/PM_SLEEP) \
+    $(wildcard include/config/OF) \
+    $(wildcard include/config/DEVTMPFS) \
+  include/linux/dev_printk.h \
+  include/linux/energy_model.h \
+  include/linux/sched/cpufreq.h \
+    $(wildcard include/config/CPU_FREQ) \
+  include/linux/sched/topology.h \
+    $(wildcard include/config/SCHED_DEBUG) \
+    $(wildcard include/config/SCHED_CLUSTER) \
+    $(wildcard include/config/SCHED_MC) \
+    $(wildcard include/config/CPU_FREQ_GOV_SCHEDUTIL) \
+  include/linux/sched/idle.h \
+  include/linux/sched/sd_flags.h \
+  include/linux/klist.h \
+  include/linux/pm.h \
+    $(wildcard include/config/VT_CONSOLE_SLEEP) \
+    $(wildcard include/config/CXL_SUSPEND) \
+    $(wildcard include/config/PM_CLK) \
+    $(wildcard include/config/PM_GENERIC_DOMAINS) \
+  include/linux/device/bus.h \
+    $(wildcard include/config/ACPI) \
+  include/linux/device/class.h \
+  include/linux/device/driver.h \
+  arch/x86/include/asm/device.h \
+  include/linux/pm_wakeup.h \
+  include/linux/bio.h \
+  include/linux/mempool.h \
+  include/uapi/linux/blkzoned.h \
+  include/linux/sbitmap.h \
 
-/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o: $(deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o)
+/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o: $(deps_/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o)
 
-$(deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o):
+$(deps_/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o):
 
-/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.o: $(wildcard ./tools/objtool/objtool)
+/home/zly/桌面/ZTE_OS/IO-monitor/tasksIO_for_oneDev/io_monitor.o: $(wildcard ./tools/objtool/objtool)
