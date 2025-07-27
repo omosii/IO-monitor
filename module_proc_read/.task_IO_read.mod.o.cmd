@@ -358,6 +358,7 @@ deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.mod.o := \
     $(wildcard include/config/HAVE_STATIC_CALL) \
   include/linux/instruction_pointer.h \
   include/linux/bitmap.h \
+  include/linux/cleanup.h \
   include/linux/errno.h \
   include/uapi/linux/errno.h \
   arch/x86/include/generated/uapi/asm/errno.h \
@@ -418,7 +419,6 @@ deps_/home/zly/桌面/ZTE_OS/IO-monitor/module_proc_read/task_IO_read.mod.o := \
     $(wildcard include/config/DEBUG_IRQFLAGS) \
     $(wildcard include/config/TRACE_IRQFLAGS_SUPPORT) \
   include/linux/irqflags_types.h \
-  include/linux/cleanup.h \
   arch/x86/include/asm/irqflags.h \
   arch/x86/include/asm/fpu/types.h \
   arch/x86/include/asm/vmxfeatures.h \

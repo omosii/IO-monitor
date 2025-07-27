@@ -125,7 +125,7 @@ static int __init task_io_read_init(void)
 {
     if (!proc_create(PROC_NAME, 0, NULL, &task_io_proc_fops)) {
         printk(KERN_ERR "task_io_read: 无法创建 /proc/%s\n", PROC_NAME);
-        return -ENOMEM;
+        return -ENOMEM; // 内存不足错误
     }
     printk(KERN_INFO "task_io_read: 模块加载，/proc/%s 已创建\n", PROC_NAME);
     return 0;
