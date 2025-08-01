@@ -7,15 +7,23 @@
 #include <linux/sched.h>
 #include <linux/version.h>
 
-#define PROC_ENTRY_NAME "io_monitor"
-
+#define PROC_ENTRY_NAME_REALTIME "io_monitor_mod1"
+#define PROC_ENTRY_NAME_HISTORY "io_monitor_mod2"
+#define IO_STATS_HASH_SIZE 1024
+#define SLEEP_milliseconds 50
 struct task_io_stats {
     pid_t pid;
     pid_t ppid;           // 父进程PID
     char comm[TASK_COMM_LEN];
     char parent_comm[TASK_COMM_LEN];  // 父进程名称
+
     unsigned long read_bytes;
     unsigned long write_bytes;
+    unsigned long read_bytes_pms;
+    unsigned long write_bytes_pms;
+
+    u64 record_time_ns;
+    struct hlist_node task_hnode;
 };
 
 // 版本兼容性宏定义

@@ -1,1 +1,0 @@
-savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/hello.mod := printf '%s\n'   hello.o | awk '!x[$$0]++ { print("/home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/"$$0) }' > /home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/hello.mod

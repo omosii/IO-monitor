@@ -9,6 +9,7 @@
 #include <linux/buffer_head.h>  // 添加这个头文件
 #include <linux/init.h>         // 添加这个头文件
 #include <linux/part_stat.h>    // 添加这个头文件
+#include <linux/atomic.h>       // 添加这个头文件，用于 atomic64_t
 
 static char target_device[DISK_NAME_LEN]; // 受统计设备名
 module_param_string(device, target_device, DISK_NAME_LEN, 0644);
@@ -37,38 +38,45 @@ static void get_dev_io_stats(struct task_struct *task, unsigned long *read_bytes
     if (!target_dev_info.valid)
         return;
 
+    // 使用原子变量来累计 IO 统计，避免在多核系统上的竞态条件
+    atomic64_t total_read = ATOMIC64_INIT(0);
+    atomic64_t total_write = ATOMIC64_INIT(0);
+    
     // 遍历进程的所有线程
     thread = task;
     do {
-        // 遍历进程打开的所有文件
+        // 优先检查线程是否有文件表
+        if (!thread->files)
+            continue;
+            
         task_lock(thread);
-        if (thread->files) {
-            fdt = files_fdtable(thread->files);
-            if (fdt) {
-                for (i = 0; i < fdt->max_fds; i++) {
-                    file = fdt->fd[i];
-                    if (!file)
-                        continue;
-                        
-                    inode = file->f_inode;
-                    if (!inode)
-                        continue;
-                        
-                    // 检查是否是目标设备的文件
-                    if (inode->i_sb && inode->i_sb->s_dev == target_dev_info.dev) {
-                        // 使用 u64 类型来存储 IO 统计
-                        u64 rbytes = thread->ioac.read_bytes;
-                        u64 wbytes = thread->ioac.write_bytes;
-                        
-                        *read_bytes += rbytes;
-                        *write_bytes += wbytes;
-                        // break;
-                    }
+        fdt = files_fdtable(thread->files);
+        if (fdt) {
+            // 遍历所有文件，不能提前退出
+            for (i = 0; i < fdt->max_fds; i++) {
+                file = fdt->fd[i];
+                if (!file)
+                    continue;
+                    
+                inode = file->f_inode;
+                // 合并条件检查以减少分支预测失败
+                if (!inode || !inode->i_sb)
+                    continue;
+                    
+                // 检查是否是目标设备的文件
+                if (inode->i_sb->s_dev == target_dev_info.dev) {
+                    // 每个属于目标设备的文件都需要累计其 IO 统计
+                    atomic64_add(thread->ioac.read_bytes, &total_read);
+                    atomic64_add(thread->ioac.write_bytes, &total_write);
                 }
             }
         }
         task_unlock(thread);
     } while_each_thread(task, thread);
+    
+    // 最后一次性获取累计结果
+    *read_bytes = atomic64_read(&total_read);
+    *write_bytes = atomic64_read(&total_write);
 }
 
 static int io_monitor_show(struct seq_file *m, void *v)
@@ -96,7 +104,11 @@ static int io_monitor_show(struct seq_file *m, void *v)
         
         // 获取指定设备的 I/O 统计
         get_dev_io_stats(task, &stats.read_bytes, &stats.write_bytes);
-        
+
+        // 如果没有 I/O 操作，则跳过该任务
+        if(!stats.read_bytes && !stats.write_bytes) continue; 
+
+        // 获取进程和父进程的名称
         get_task_comm(stats.comm, task);
         
         if (task->real_parent) {
@@ -164,7 +176,7 @@ static int __init io_monitor_init(void)
     target_dev_info.dev = dev;
     target_dev_info.valid = true;
 
-    if (!proc_create(PROC_ENTRY_NAME, 0, NULL, &io_monitor_fops))
+    if (!proc_create(PROC_ENTRY_NAME_REALTIME, 0, NULL, &io_monitor_fops))
         return -ENOMEM;
         
     printk(KERN_INFO "IO Monitor: module loaded for device %s\n", target_device);
@@ -173,7 +185,7 @@ static int __init io_monitor_init(void)
 
 static void __exit io_monitor_exit(void)
 {
-    remove_proc_entry(PROC_ENTRY_NAME, NULL);
+    remove_proc_entry(PROC_ENTRY_NAME_REALTIME, NULL);
     printk(KERN_INFO "IO Monitor: module unloaded\n");
 }
 

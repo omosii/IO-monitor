@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "sched.h": "c",
+        "fdtable.h": "c",
+        "buffer_head.h": "c",
+        "file.h": "c",
+        "atomic.h": "c",
+        "version.h": "c",
+        "delay.h": "c"
+    }
+}

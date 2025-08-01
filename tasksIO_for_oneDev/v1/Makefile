@@ -1,4 +1,5 @@
-obj-m += io_monitor.o
+# 修改要编译的源文件名
+obj-m += io_monitor_0731.o
 
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
@@ -10,13 +11,13 @@ clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
 
 insmod_demo:
-	sudo insmod io_monitor.ko device=/dev/sda
+	sudo insmod io_monitor_0731.ko device=/dev/sda3
 rmmod:
-	sudo rmmod io_monitor
+	sudo rmmod io_monitor_0731
 
 #显示信息
 dmesg:
 	sudo dmesg | tail -n 20
 
 lsmod:
-	sudo lsmod | grep io_monitor
+	sudo lsmod | grep io_monitor_0731

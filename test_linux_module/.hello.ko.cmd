@@ -1,1 +1,0 @@
-savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/hello.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o /home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/hello.ko /home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/hello.o /home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/hello.mod.o

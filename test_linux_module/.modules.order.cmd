@@ -1,1 +1,0 @@
-savedcmd_/home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/modules.order := {   echo /home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/hello.o; :; } > /home/zly/桌面/ZTE_OS/IO-monitor/test_linux_module/modules.order
