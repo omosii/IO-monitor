@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <time.h>
+#include <limits.h>
 
 #define PROC_FILE_MOD1 "/proc/io_monitor_mod1"
 #define PROC_FILE_MOD2 "/proc/io_monitor_mod2"
@@ -41,9 +42,13 @@ void mode1_monitor(int interval) {
     char buffer[BUF_SIZE];
     
     while(1) {
+        
         // 清屏
         printf("\033[2J\033[H");
         
+        // printf("unsigned long size: %zu bits\n", sizeof(unsigned long) * 8);
+        // printf("unsigned long max: %lu\n", ULONG_MAX);
+
         // 在清屏后重新显示提示信息
         printf("按 'q' 键退出程序\n\n");
         

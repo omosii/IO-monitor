@@ -6,6 +6,7 @@
         "file.h": "c",
         "atomic.h": "c",
         "version.h": "c",
-        "delay.h": "c"
+        "delay.h": "c",
+        "limits.h": "c"
     }
 }

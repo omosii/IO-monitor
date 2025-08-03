@@ -17,7 +17,13 @@ rmmod:
 
 #显示信息
 dmesg:
-	sudo dmesg | tail -n 20
+	sudo dmesg | grep io_monitor
+
+dmesg_err:
+	sudo dmesg -l err
 
 lsmod:
 	sudo lsmod | grep io_monitor_0731
+
+modinfo:
+	sudo modinfo io_monitor_0731

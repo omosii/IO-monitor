@@ -10,7 +10,9 @@
 #define PROC_ENTRY_NAME_REALTIME "io_monitor_mod1"
 #define PROC_ENTRY_NAME_HISTORY "io_monitor_mod2"
 #define IO_STATS_HASH_SIZE 1024
-#define SLEEP_milliseconds 50
+#define SLEEP_MILLISECONDS 50
+#define MOUDLE_NAME "io_monitor_0731"
+#define ZOOM_FACTOR 1 // 用于速率计算的缩放因子
 struct task_io_stats {
     pid_t pid;
     pid_t ppid;           // 父进程PID
@@ -19,8 +21,8 @@ struct task_io_stats {
 
     unsigned long read_bytes;
     unsigned long write_bytes;
-    unsigned long read_bytes_pms;
-    unsigned long write_bytes_pms;
+    unsigned long read_Bpms;
+    unsigned long write_Bpms;
 
     u64 record_time_ns;
     struct hlist_node task_hnode;
