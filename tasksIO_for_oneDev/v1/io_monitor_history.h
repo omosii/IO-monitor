@@ -4,6 +4,7 @@
 #include <linux/list.h>
 #include <linux/time64.h>
 #include <linux/sched.h>
+#include <linux/workqueue.h>
 
 /*
     链表结构如下：
@@ -59,6 +60,6 @@ void cleanup_io_mod2(void);
 
 
 // 模块参数声明
-extern int interval_minutes;
+extern int interval_seconds;
 
 #endif /* IO_MONITOR_HISTORY_H */

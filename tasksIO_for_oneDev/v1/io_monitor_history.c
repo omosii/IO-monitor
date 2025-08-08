@@ -15,6 +15,7 @@
 #include <linux/fs_struct.h>
 #include <linux/filelock.h>  // 替换 file_lock_api.h
 #include <linux/uaccess.h>
+#include <linux/workqueue.h>
 
 #define HISTORY_LOG_PATH "/tmp/io_monitor_history.txt"
 #define LOG_BUFFER_SIZE 4096
@@ -27,32 +28,23 @@ MODULE_PARM_DESC(interval_seconds, "Monitoring interval in seconds (default: 30)
 // 添加全局互斥锁保护文件操作
 static DEFINE_MUTEX(io_history_file_mutex);
 
+// 工作队列与持久文件句柄
+static struct workqueue_struct *io_hist_wq;
+static struct delayed_work io_hist_work;
+static struct file *history_filp; // 模块存活期内持有
+
 // 创建历史日志文件
 static int create_history_file(void)
 {
-    struct file *history_file;
-    int retry_count = 0;
-    const int max_retries = 3;
+    struct file *f;
 
-    while (retry_count < max_retries) {
-        history_file = filp_open(HISTORY_LOG_PATH, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-        if (IS_ERR(history_file)) {
-            long err = PTR_ERR(history_file);
-            printk(KERN_WARNING "[io_monitor | mod_2] Failed to create history file (attempt %d/%d): %ld\n", 
-                   retry_count + 1, max_retries, err);
-            
-            retry_count++;
-            if (retry_count >= max_retries) {
-                printk(KERN_ERR "[io_monitor | mod_2] Failed to create history file after %d attempts\n", max_retries);
-                return err;
-            }
-            continue;
-        }
-        break;
+    f = filp_open(HISTORY_LOG_PATH, O_WRONLY | O_CREAT | O_APPEND, 0666);
+    if (IS_ERR(f)) {
+        printk(KERN_ERR "[io_monitor | mod_2] Failed to open history file: %ld\n", PTR_ERR(f));
+        return PTR_ERR(f);
     }
-    
-    filp_close(history_file, NULL);
 
+    history_filp = f;
     printk(KERN_INFO "[io_monitor | mod_2] History file created at: %s\n", HISTORY_LOG_PATH);
     return 0;
 }
@@ -60,39 +52,23 @@ static int create_history_file(void)
 // 追加写入历史文件
 static void append_to_history_file(const char *log_entry)
 {
-    struct file *history_file;
-    loff_t pos = 0;
-    int retry_count = 0;
-    const int max_retries = 3;
+    loff_t pos;
+    ssize_t wrote;
 
-    while (retry_count < max_retries) {
-        history_file = filp_open(HISTORY_LOG_PATH, O_WRONLY | O_CREAT | O_APPEND, 0644);
-        if (IS_ERR(history_file)) {
-            long err = PTR_ERR(history_file);
-            printk(KERN_WARNING "[io_monitor | mod_2] Failed to open history file (attempt %d/%d): %ld\n", 
-                   retry_count + 1, max_retries, err);
-            
-            // 如果是文件不存在，尝试重新创建
-            if (err == -ENOENT) {
-                printk(KERN_INFO "[io_monitor | mod_2] File not found, attempting to recreate...\n");
-                create_history_file();
-                retry_count++;
-                continue;
-            }
-            
-            retry_count++;
-            if (retry_count >= max_retries) {
-                printk(KERN_ERR "[io_monitor | mod_2] Failed to open history file after %d attempts\n", max_retries);
-                return;
-            }
-            continue;
+    if (!history_filp) {
+        // 发生异常被关闭或尚未创建，尝试自愈
+        if (create_history_file() < 0) {
+            printk(KERN_ERR "[io_monitor | mod_2] history_filp is NULL and recreate failed\n");
+            return;
         }
-        break;
     }
 
-    // 写入日志条目
-    kernel_write(history_file, log_entry, strlen(log_entry), &pos);
-    filp_close(history_file, NULL);
+    // 先寻到文件尾部再写，保证追加
+    pos = vfs_llseek(history_filp, 0, SEEK_END);
+    wrote = kernel_write(history_filp, log_entry, strlen(log_entry), &pos);
+    if (wrote < 0) {
+        printk(KERN_ERR "[io_monitor | mod_2] kernel_write failed: %zd\n", wrote);
+    }
 }
 
 // 获取指定设备的 I/O 统计信息
@@ -321,20 +297,12 @@ static void update_io_stats(void)
     kfree(record);
 }
 
-static void update_timer_callback(struct timer_list *t);
-DEFINE_TIMER(update_timer, update_timer_callback);
-
-// 定时更新函数
-static void update_timer_callback(struct timer_list *t)
+// 工作队列回调（进程上下文）
+static void io_hist_work_func(struct work_struct *work)
 {
     update_io_stats();
-    
-    // 重新设置定时器
-    mod_timer(&update_timer, 
-              jiffies + msecs_to_jiffies(interval_seconds * 1000));
-
-    printk(KERN_INFO "[io_monitor | mod_2] Timer reset, next update in %d seconds\n", 
-                interval_seconds);
+    queue_delayed_work(io_hist_wq, &io_hist_work,
+                       msecs_to_jiffies(interval_seconds * 1000));
 }
 
 // 从历史文件读取内容
@@ -446,11 +414,15 @@ int init_io_mod2(void)
         return -ENOMEM;
     }
     
-    // 立即执行一次统计
-    update_io_stats();
-    // 启动定时器
-    mod_timer(&update_timer, 
-              jiffies + msecs_to_jiffies(interval_seconds * 1000));
+    // 创建工作队列并启动周期任务
+    io_hist_wq = alloc_workqueue("io_hist_wq", WQ_UNBOUND | WQ_HIGHPRI, 1);
+    if (!io_hist_wq) {
+        remove_proc_entry("io_monitor_mod2", NULL);
+        printk(KERN_ERR "[io_monitor | mod_2] Failed to create workqueue\n");
+        return -ENOMEM;
+    }
+    INIT_DELAYED_WORK(&io_hist_work, io_hist_work_func);
+    queue_delayed_work(io_hist_wq, &io_hist_work, 0);
               
     printk(KERN_INFO "[io_monitor | mod_2] Module 2 initialized\n");
     printk(KERN_INFO "[io_monitor | mod_2] History file location: %s\n", HISTORY_LOG_PATH);
@@ -461,11 +433,21 @@ int init_io_mod2(void)
 // 清理函数
 void cleanup_io_mod2(void)
 {
-    // 删除定时器
-    del_timer_sync(&update_timer);
+    // 停止工作队列
+    if (io_hist_wq) {
+        cancel_delayed_work_sync(&io_hist_work);
+        destroy_workqueue(io_hist_wq);
+        io_hist_wq = NULL;
+    }
     
     // 移除proc入口
     remove_proc_entry("io_monitor_mod2", NULL);
+    
+    // 关闭持久文件
+    if (history_filp) {
+        filp_close(history_filp, NULL);
+        history_filp = NULL;
+    }
     
     printk(KERN_INFO "[io_monitor | mod_2] Module 2 cleaned up\n");
     printk(KERN_INFO "[io_monitor | mod_2] History file preserved at: %s\n", HISTORY_LOG_PATH);

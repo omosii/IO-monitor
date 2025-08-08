@@ -72,7 +72,7 @@ static void get_dev_io_stats(struct task_struct *task, unsigned long *read_bytes
     } while_each_thread(task, thread);
 }
 
-// 更新IO统计信息, 每interval_minutes个周期启动一次
+// 更新IO统计信息, 每个周期启动一次
 static void update_io_stats(void)
 {
     struct task_struct *task;
