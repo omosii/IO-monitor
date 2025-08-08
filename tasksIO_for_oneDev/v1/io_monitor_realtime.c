@@ -1,22 +1,14 @@
-#include "io_monitor.h" // 包含头文件 io_monitor.h
-#include <linux/fs.h> // 包含文件系统相关的函数和结构体
-#include <linux/uaccess.h>  // 包含用户空间访问相关的函数和宏   
+#include "io_monitor.h" 
+#include "io_monitor_realtime.h"    
+
+#include <linux/fs.h>        // 用于文件系统操作和 struct inode
+#include <linux/fdtable.h>   // 用于 files_fdtable
+#include <linux/file.h>      // 用于文件操作和 struct file
+#include <linux/atomic.h>    // 用于 atomic64_t 原子操作
+#include <linux/ktime.h>     // 用于时间相关函数 ktime_get_ns()
 #include <linux/blkdev.h> // 包含块设备相关的函数和结构体
-#include <linux/fdtable.h>    // 用于 files_fdtable
-#include <linux/file.h>       // 用于 fget
-#include <linux/blk_types.h>  // 用于块设备相关类型
-#include <linux/buffer_head.h> 
-#include <linux/init.h>       
-#include <linux/part_stat.h>   
-#include <linux/atomic.h>       // 添加这个头文件，用于 atomic64_t
-#include <linux/ktime.h> // 添加这个头文件，用于时间相关函数
-#include <linux/delay.h>  // 添加这行，用于 msleep 函数
-
-static char target_device[DISK_NAME_LEN]; // 受统计设备名
-module_param_string(device, target_device, DISK_NAME_LEN, 0644);
-
-// 定义全局设备信息结构体
-struct device_info target_dev_info = {0};
+//
+static char target_device_mod1[DISK_NAME_LEN]; // 受统计设备名
 
 // 全局哈希表锁
 static spinlock_t io_stats_hash_lock;
@@ -56,7 +48,7 @@ static void clear_hlist_head(void){
         }
     }
     spin_unlock(&io_stats_hash_lock);
-    printk(KERN_INFO "[io_monitor_0731] : hash table cleared\n");
+    printk(KERN_INFO "[io_monitor | mod_1] : hash table cleared\n");
 }
 static void init_my_hlist_head(void){
     // task_io_stats_hash初始化
@@ -65,7 +57,7 @@ static void init_my_hlist_head(void){
         INIT_HLIST_HEAD(&task_io_stats_hash[i]);
     }
     spin_unlock(&io_stats_hash_lock);
-    printk(KERN_INFO "[io_monitor_0731] : hash table init success\n");
+    printk(KERN_INFO "[io_monitor | mod_1] : hash table init success\n");
 }
 
 
@@ -74,7 +66,7 @@ static void get_dev_io_stats(struct task_struct *task, unsigned long *read_bytes
 {
     // 参数验证
     if (!task || !read_bytes || !write_bytes || !start_ns) {
-        printk(KERN_ERR "[io_monitor_0731] : NULL pointer passed to get_dev_io_stats\n");
+        printk(KERN_ERR "[io_monitor | mod_1] : NULL pointer passed to get_dev_io_stats\n");
         return;
     }
 
@@ -137,7 +129,7 @@ static int io_monitor_show(struct seq_file *m, void *v)
 {
     // 添加错误检查
     if (!m) {
-        printk(KERN_ERR "[io_monitor_0731] : NULL seq_file pointer\n");
+        printk(KERN_ERR "[io_monitor | mod_1] : NULL seq_file pointer\n");
         return -EINVAL;
     }
 
@@ -152,9 +144,9 @@ static int io_monitor_show(struct seq_file *m, void *v)
     seq_puts(m, "============================================================================\n");
     // 在 io_monitor_show 函数中添加设备信息输出
     seq_printf(m, "Monitoring device: %s (dev_t: %u:%u)\n", 
-    target_device,
-    MAJOR(target_dev_info.dev),
-    MINOR(target_dev_info.dev));
+        target_device_mod1,
+        MAJOR(target_dev_info.dev),
+        MINOR(target_dev_info.dev));
     seq_puts(m, "----------------------------------------------------------------------------\n");
     seq_printf(m, "%-16s %-8s %-16s %-8s %-12s %-12s\n",
         "COMM", "PID", "PARENT_COMM", "PPID", "Rd_Bpms", "Wt_Bpms");
@@ -164,7 +156,7 @@ static int io_monitor_show(struct seq_file *m, void *v)
     for_each_process(task) {
         struct task_io_stats *first_stats = kmalloc(sizeof(struct task_io_stats), GFP_KERNEL);
         if (!first_stats) {
-            printk(KERN_ERR "[io_monitor_0731] : Failed to allocate first_stats\n");
+            printk(KERN_ERR "[io_monitor | mod_1] : Failed to allocate first_stats\n");
             return -ENOMEM;
         }
         memset(first_stats, 0, sizeof(first_stats)); // 清零结构体
@@ -199,7 +191,7 @@ static int io_monitor_show(struct seq_file *m, void *v)
     for_each_process(task) {
         struct task_io_stats *second_stats = kmalloc(sizeof(struct task_io_stats), GFP_KERNEL);
         if (!second_stats) {
-            printk(KERN_ERR "[io_monitor_0731] : Failed to allocate second_stats\n");
+            printk(KERN_ERR "[io_monitor | mod_1] : Failed to allocate second_stats\n");
             return -ENOMEM;
         }
         memset(second_stats, 0, sizeof(second_stats)); // 清零结构体
@@ -268,14 +260,14 @@ static int io_monitor_show(struct seq_file *m, void *v)
     return 0;
 }
 
-static int io_monitor_open(struct inode *inode, struct file *file)
+static int io_monitor_mod1_open(struct inode *inode, struct file *file)
 {
     return single_open(file, io_monitor_show, NULL);
 }
 
 #ifdef HAVE_PROC_OPS
-static const struct proc_ops io_monitor_fops = {
-    .proc_open = io_monitor_open,
+static const struct proc_ops io_monitor_mod1_fops = {
+    .proc_open = io_monitor_mod1_open,
     .proc_read = seq_read, // 使用 seq_read 处理读取操作
     .proc_lseek = seq_lseek, // 使用 seq_lseek 处理 lseek 操作
     .proc_release = single_release, // 使用 single_release 处理释放操作
@@ -290,63 +282,44 @@ static const struct file_operations io_monitor_fops = {
 };
 #endif
 
-static int __init io_monitor_init(void)
+// 模式1 初始化函数
+int init_to_mod1(const char* target_device)
 {
-    dev_t dev;
-    int ret;
-    struct proc_dir_entry *proc_entry;
-
-    // 增加设备名长度检查
-    if (strlen(target_device) >= DISK_NAME_LEN) {
-        printk(KERN_ERR "[io_monitor_0731] : Device name too long\n");
-        return -EINVAL;
-    }
-    // 检查设备名是否为空
-    if (strlen(target_device) == 0) {
-        printk(KERN_ERR "[io_monitor_0731] : No target device specified\n");
-        return -EINVAL;
-    }
-
-    ret = lookup_bdev(target_device, &dev);
-    if (ret) {
-        printk(KERN_ERR "[io_monitor_0731] : Cannot find device %s\n", target_device);
-        return ret;
-    }
-
-    // 直接使用找到的设备号，不尝试获取块设备
-    target_dev_info.dev = dev;
-    target_dev_info.valid = true;
-
+    strscpy(target_device_mod1, target_device, sizeof(target_device_mod1)); // 复制设备名到全局变量
+    // 初始化全局变量
     spin_lock_init(&io_stats_hash_lock);  // 初始化自旋锁
     init_my_hlist_head(); // 初始化哈希表
 
-    proc_entry = proc_create(PROC_ENTRY_NAME_REALTIME, 0, NULL, &io_monitor_fops);
+    // 创建proc条目
+    struct proc_dir_entry *proc_entry;
+    proc_entry = proc_create(PROC_ENTRY_NAME_REALTIME, 0, NULL, &io_monitor_mod1_fops);
     if (!proc_entry) {
-        printk(KERN_ERR "[io_monitor_0731] : Cannot create proc entry\n");
+        printk(KERN_ERR "[io_monitor | mod_1] : Cannot create proc io_monitor_mod1\n");
         return -ENOMEM;
     }
-        
-    printk(KERN_INFO "[io_monitor_0731] : module loaded for device %s\n", target_device);
-    return 0;
+
+    return 0; // 成功返回0
 }
 
-static void __exit io_monitor_exit(void)
-{
-    printk(KERN_INFO "[io_monitor_0731] : starting module cleanup\n");
-    
+// 模式1 退出函数
+void cleanup_to_mod1(void)
+{  
     // 清理哈希表前先打印状态
-    printk(KERN_INFO "[io_monitor_0731] : clearing hash table\n");
+    printk(KERN_INFO "[io_monitor | mod_1] : clearing hash table\n");
     clear_hlist_head();
-    
-    printk(KERN_INFO "[io_monitor_0731] : removing proc entry\n");
+    // 移除proc条目
+    printk(KERN_INFO "[io_monitor | mod_1] : removing proc io_monitor_mod1\n");
     remove_proc_entry(PROC_ENTRY_NAME_REALTIME, NULL);
-    
-    printk(KERN_INFO "[io_monitor_0731] : module unloaded successfully\n");
 }
 
-module_init(io_monitor_init);
-module_exit(io_monitor_exit);
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Luyi Zhang");
-MODULE_DESCRIPTION("[io_monitor_0731]  for specific device");
+// #include <linux/fs.h>      // 文件系统相关
+// #include <linux/fdtable.h> // 文件描述符表
+// #include <linux/file.h>    // 文件操作
+// #include <linux/atomic.h>  // 原子操作
+// #include <linux/ktime.h>   // 时间相关
+// #include <linux/uaccess.h>  // 包含用户空间访问相关的函数和宏   
+//#include <linux/blk_types.h>  // 用于块设备相关类型
+// #include <linux/buffer_head.h> 
+// #include <linux/init.h>       
+// #include <linux/part_stat.h>

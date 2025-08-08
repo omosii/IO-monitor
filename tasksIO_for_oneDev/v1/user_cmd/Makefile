@@ -5,15 +5,16 @@ CFLAGS = -Wall -O2
 # 目标文件
 TARGET = my_iostat
 
-# 源文件
+# 源文件和头文件
 SRC = my_iostat.c
+HEADERS = my_iostat.h
 
 # 默认目标
 all: $(TARGET)
 
-# 编译规则
-$(TARGET):$(SRC)
-	$(CC) $(CFLAGS) -o $@ $^
+# 编译规则，添加头文件依赖
+$(TARGET): $(SRC) $(HEADERS)
+	$(CC) $(CFLAGS) -o $@ $(SRC)
 
 # 清理规则
 clean:

@@ -9,24 +9,7 @@
 
 #define PROC_ENTRY_NAME_REALTIME "io_monitor_mod1"
 #define PROC_ENTRY_NAME_HISTORY "io_monitor_mod2"
-#define IO_STATS_HASH_SIZE 1024
-#define SLEEP_MILLISECONDS 50
-#define MOUDLE_NAME "io_monitor_0731"
-#define ZOOM_FACTOR 1 // 用于速率计算的缩放因子
-struct task_io_stats {
-    pid_t pid;
-    pid_t ppid;           // 父进程PID
-    char comm[TASK_COMM_LEN];
-    char parent_comm[TASK_COMM_LEN];  // 父进程名称
-
-    unsigned long read_bytes;
-    unsigned long write_bytes;
-    unsigned long read_Bpms;
-    unsigned long write_Bpms;
-
-    u64 record_time_ns;
-    struct hlist_node task_hnode;
-};
+#define MOUDLE_NAME "io_monitor"
 
 // 版本兼容性宏定义
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
@@ -46,5 +29,7 @@ struct device_info {
 };
 
 extern struct device_info target_dev_info;
+
+extern dev_t target_dev; // 定义全局设备号
 
 #endif /* IO_MONITOR_H */

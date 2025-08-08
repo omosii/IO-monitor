@@ -7,6 +7,15 @@
         "atomic.h": "c",
         "version.h": "c",
         "delay.h": "c",
-        "limits.h": "c"
+        "limits.h": "c",
+        "io_monitor.h": "c",
+        "module.h": "c",
+        "io_monitor_history.h": "c",
+        "blk_types.h": "c",
+        "fs.h": "c",
+        "seq_file.h": "c",
+        "errno.h": "c",
+        "termios.h": "c",
+        "filelock.h": "c"
     }
 }
