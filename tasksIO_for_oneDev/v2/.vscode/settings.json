@@ -1,6 +1,29 @@
 {
     "files.associations": {
         "sched.h": "c",
-        "fs.h": "c"
-    }
+        "fs.h": "c",
+        "rcupdate.h": "c",
+        "seq_file.h": "c",
+        "namei.h": "c",
+        "kprobes.h": "c"
+    },
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**",
+        "/usr/src/linux-headers-6.8.0-65-generic/include",
+        "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include",
+        "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include/generated",
+        "/usr/src/linux-headers-6.8.0-65-generic/include/linux",
+        "/usr/src/linux-headers-6.8.0-65-generic/include/uapi",
+        "/usr/src/linux-headers-6.8.0-65-generic/include/generated/uapi",
+        "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include/uapi",
+        "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include/generated/uapi"
+    ],
+    "C_Cpp.default.defines": [
+        "__KERNEL__",
+        "MODULE",
+        "KBUILD_MODNAME=\"io_monitor_v3\""
+    ],
+    // "C_Cpp.errorSquiggles": "Enabled",
+    "C_Cpp.default.intelliSenseMode": "gcc-x64",
+    "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

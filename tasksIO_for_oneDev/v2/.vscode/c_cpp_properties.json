@@ -1,0 +1,39 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "Linux",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "linux-gcc-x64",
+      "browse": {
+        "path": [
+          "${workspaceFolder}",
+          "/usr/src/linux-headers-6.8.0-65-generic/include",
+          "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include",
+          "/usr/src/linux-headers-6.8.0-65-generic"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "${workspaceFolder}/**",
+        "/usr/src/linux-headers-6.8.0-65-generic/include",
+        "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include",
+        "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include/generated",
+        "/usr/src/linux-headers-6.8.0-65-generic/include/linux",
+        "/usr/src/linux-headers-6.8.0-65-generic/include/uapi",
+        "/usr/src/linux-headers-6.8.0-65-generic/include/generated/uapi",
+        "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include/uapi",
+        "/usr/src/linux-headers-6.8.0-65-generic/arch/x86/include/generated/uapi"
+      ],
+      "defines": [
+        "__KERNEL__",
+        "MODULE",
+        "KBUILD_MODNAME=\"io_monitor_v3\"",
+        "__GNUC__",
+        "_LP64"
+      ]
+    }
+  ]
+}
