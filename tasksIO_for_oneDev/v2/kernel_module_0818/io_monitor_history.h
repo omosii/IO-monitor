@@ -4,8 +4,6 @@
 #include <linux/types.h>
 #include <linux/atomic.h>
 #include <linux/rcupdate.h>
-#include <linux/seq_file.h>
-#include <linux/proc_fs.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
 #include <linux/workqueue.h>
@@ -50,5 +48,10 @@ void handle_bio_request(struct bio *bio);
 
 /* 以下接口主模块未直接使用，可留作测试需要（不导出符号） */
 int update_filter_rule(dev_t dev, bool track_r, bool track_w);
+
+/* 供实时 /proc 读取日志时使用的线程安全接口 */
+struct file *io_log_file_get(void); /* 引用计数 +1，使用后 fput */
+void io_log_read_lock(void);
+void io_log_read_unlock(void);
 
 #endif /* IO_MONITOR_HISTORY_H */

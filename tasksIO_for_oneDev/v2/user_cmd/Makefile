@@ -1,14 +1,18 @@
 CC = gcc
-CFLAGS = -Wall -O2
+CFLAGS = -Wall -O2 -pthread
 LDFLAGS = -pthread
 TARGET = analyze_io_log
+OBJS = analyze_io_log.o
 
 all: $(TARGET)
 
-$(TARGET): analyze_io_log.c
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+analyze_io_log.o: analyze_io_log.c analyze_io_log.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(OBJS)
 
 .PHONY: all clean

@@ -223,58 +223,12 @@ int update_filter_rule(dev_t dev, bool track_r, bool track_w)
     return 0;
 }
 
-/* ================= /proc 输出 ================= */
-static int proc_show(struct seq_file *m, void *v)
-{
-    
-    return 0;
-}
-
-static int proc_open(struct inode *inode, struct file *file)
-{
-    return single_open(file, proc_show, NULL);
-}
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
-static const struct proc_ops proc_fops = {
-    .proc_open    = proc_open,
-    .proc_read    = seq_read,
-    .proc_lseek   = seq_lseek,
-    .proc_release = single_release,
-};
-#else
-static const struct file_operations proc_fops = {
-    .owner   = THIS_MODULE,
-    .open    = proc_open,
-    .read    = seq_read,
-    .llseek  = seq_lseek,
-    .release = single_release,
-};
-#endif
-
-static int create_proc_entry(void)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
-    if (!proc_create(MODULE_NAME, 0444, NULL, &proc_fops))
-        return -ENOMEM;
-#else
-    if (!proc_create(MODULE_NAME, 0444, NULL, &proc_fops))
-        return -ENOMEM;
-#endif
-    return 0;
-}
-
-static void remove_proc_entry_impl(void)
-{
-    remove_proc_entry(MODULE_NAME, NULL);
-}
-
 /* ================= 日志文件系统 ================= */
 static int create_log_file(void)
 {
     struct file *f;
 
-    f = filp_open(LOG_FILE_PATH, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    f = filp_open(LOG_FILE_PATH, O_CREAT | O_APPEND | O_RDWR, 0644);
     if (IS_ERR(f))
         return PTR_ERR(f);
     log_file = f;
@@ -311,6 +265,29 @@ static void cleanup_log_system(void)
         log_file = NULL;
         mutex_unlock(&log_mutex);
     }
+}
+
+/* ========= 新增: 供 realtime (/proc) 使用的日志访问接口 ========= */
+struct file *io_log_file_get(void)
+{
+    struct file *f = NULL;
+    mutex_lock(&log_mutex);
+    if (log_file) {
+        get_file(log_file);
+        f = log_file;
+    }
+    mutex_unlock(&log_mutex);
+    return f;
+}
+
+void io_log_read_lock(void)
+{
+    mutex_lock(&log_mutex);
+}
+
+void io_log_read_unlock(void)
+{
+    mutex_unlock(&log_mutex);
 }
 
 /* ================= RCU 回调 ================= */
@@ -353,20 +330,14 @@ int init_io_history(void)
 
     INIT_WORK(&write_log_work, write_log_worker); // 初始化工作队列
 
-    ret = create_proc_entry();
-    if (ret)
-        return ret;
-
     ret = init_log_system();
     if (ret) {
-        remove_proc_entry_impl();
         return ret;
     }
 
     ret = update_filter_rule(get_target_dev(), true, true);
     if (ret) {
         cleanup_log_system();
-        remove_proc_entry_impl();
         return ret;
     }
 
@@ -398,6 +369,4 @@ void cleanup_io_history(void)
             call_rcu(&old->rcu, (void (*)(struct rcu_head *))kfree);
         }
     }
-
-    remove_proc_entry_impl();
 }
