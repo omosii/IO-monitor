@@ -2,13 +2,14 @@
 #include <linux/blkdev.h>
 #include <linux/namei.h>
 #include <linux/kprobes.h>
-#include "io_monitor_v3.h"
+
+#include "io_monitor_v3_main.h"
 #include "io_monitor_history.h"
 
 // 模块参数
-static char target_device[MAX_DEVICE_NAME] = "sda3";
+static char target_device[MAX_DEVICE_NAME] = "/dev/sda3";
 module_param_string(device, target_device, MAX_DEVICE_NAME, 0644);
-MODULE_PARM_DESC(device, "Target device name (e.g., sda3, sdb3)");
+MODULE_PARM_DESC(device, "Target device name (e.g., /dev/sda3, /dev/sdb3)");
 
 static dev_t target_dev;  // 目标设备号
 static struct kprobe submit_bio_kp;
@@ -42,8 +43,8 @@ static int get_device_number(const char *device_name) {
     char full_path[128];
     int ret;
 
-    snprintf(full_path, sizeof(full_path), "/dev/%s", device_name);
-    ret = kern_path(full_path, LOOKUP_FOLLOW, &path);
+    snprintf(full_path, sizeof(full_path), "%s", device_name);
+    ret = kern_path(full_path, LOOKUP_FOLLOW, &path); // 
     if (ret)
         return ret;
 
@@ -63,7 +64,7 @@ static int get_device_number(const char *device_name) {
 static int __init io_monitor_init(void) {
     int ret;
 
-    printk(KERN_INFO "%s: Initializing IO Monitor v3 for device /dev/%s\n",
+    printk(KERN_INFO "%s: Initializing IO Monitor v3 for device %s\n",
            MODULE_NAME, target_device);
 
     ret = get_device_number(target_device);
@@ -85,10 +86,9 @@ static int __init io_monitor_init(void) {
 
     printk(KERN_INFO "%s: Successfully loaded, kprobe registered at %p\n",
            MODULE_NAME, submit_bio_kp.addr);
-    printk(KERN_INFO "%s: Monitoring device /dev/%s (%d:%d)\n",
+    printk(KERN_INFO "%s: Monitoring device %s (%d:%d)\n",
            MODULE_NAME, target_device, MAJOR(target_dev), MINOR(target_dev));
     printk(KERN_INFO "%s: Log file: %s\n", MODULE_NAME, LOG_FILE_PATH);
-    printk(KERN_INFO "%s: Per-bio log unit switched to KB (rounded up)\n", MODULE_NAME);
     return 0;
 }
 

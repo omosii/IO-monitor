@@ -1,7 +1,7 @@
 #include <linux/slab.h>
 #include <linux/fs.h>
 #include <linux/sched.h>
-#include <linux/workqueue.h>
+#include <linux/workqueue.h> // 
 #include <linux/mutex.h>
 #include <linux/uaccess.h>
 #include <linux/errno.h>
@@ -12,7 +12,7 @@
 #include <linux/string.h>
 #include <linux/version.h>
 #include "io_monitor_history.h"
-#include "io_monitor_v3.h"
+#include "io_monitor_v3_main.h"
 
 /* ================= 全局状态 ================= */
 static struct hlist_head proc_stats_table[HASHTABLE_SIZE];
@@ -23,7 +23,7 @@ static struct filter_rule __rcu *current_rule;
 static atomic64_t total_read_kb;
 static atomic64_t total_write_kb;
 
-static struct file *log_file;
+static struct file *log_file; // FIXME 何时清空？
 static DEFINE_MUTEX(log_mutex);
 
 static struct work_struct write_log_work;
@@ -32,28 +32,29 @@ static LIST_HEAD(log_entry_list);
 static DEFINE_SPINLOCK(log_list_lock);
 static atomic_t log_entry_count = ATOMIC_INIT(0);
 
-/* 新增：字节转KB(向上取整) */
+/* 字节转KB(向上取整) */
 #define BYTES_TO_KB(b) (((b) + 1023ULL) / 1024ULL)
 
 /* ================= 进程统计 ================= */
 static struct proc_io_stats *get_proc_stats(pid_t pid)
 {
-    struct hlist_head *head = &proc_stats_table[pid % HASHTABLE_SIZE];
-    struct proc_io_stats *stats, *new_stats;
-    unsigned long flags;
-    bool found = false;
+    // struct hlist_head *head = &proc_stats_table[pid % HASHTABLE_SIZE];
+    //struct proc_io_stats *stats;
+    struct proc_io_stats *new_stats;
+    // unsigned long flags;
+    // bool found = false;
     struct task_struct *task, *parent;
 
-    rcu_read_lock();
-    hlist_for_each_entry_rcu(stats, head, hash_node) {
-        if (stats->pid == pid) {
-            found = true;
-            break;
-        }
-    }
-    rcu_read_unlock();
-    if (found)
-        return stats;
+    // rcu_read_lock();
+    // hlist_for_each_entry_rcu(stats, head, hash_node) {
+    //     if (stats->pid == pid) {
+    //         found = true;
+    //         break;
+    //     }
+    // }
+    // rcu_read_unlock();
+    // if (found)
+    //     return stats;
 
     new_stats = kmalloc(sizeof(*new_stats), GFP_ATOMIC);
     if (!new_stats)
@@ -82,16 +83,16 @@ static struct proc_io_stats *get_proc_stats(pid_t pid)
     atomic64_set(&new_stats->read_kb, 0);
     atomic64_set(&new_stats->write_kb, 0);
 
-    spin_lock_irqsave(&hashtable_lock, flags);
-    hlist_for_each_entry_rcu(stats, head, hash_node) {
-        if (stats->pid == pid) {
-            spin_unlock_irqrestore(&hashtable_lock, flags);
-            kfree(new_stats);
-            return stats;
-        }
-    }
-    hlist_add_head(&new_stats->hash_node, head);
-    spin_unlock_irqrestore(&hashtable_lock, flags);
+    // spin_lock_irqsave(&hashtable_lock, flags);
+    // hlist_for_each_entry_rcu(stats, head, hash_node) {
+    //     if (stats->pid == pid) {
+    //         spin_unlock_irqrestore(&hashtable_lock, flags);
+    //         kfree(new_stats);
+    //         return stats;
+    //     }
+    // }
+    // hlist_add_head(&new_stats->hash_node, head);
+    // spin_unlock_irqrestore(&hashtable_lock, flags);
     return new_stats;
 }
 
@@ -111,7 +112,7 @@ static void add_log_entry(char *buffer)
         return;
     }
     entry->buffer = buffer;
-    spin_lock_irqsave(&log_list_lock, flags);
+    spin_lock_irqsave(&log_list_lock, flags); // 获取日志自旋锁并禁用中断
     list_add_tail(&entry->list, &log_entry_list);
     spin_unlock_irqrestore(&log_list_lock, flags);
     atomic_inc(&log_entry_count);
@@ -197,6 +198,8 @@ static void write_log_entry(struct bio *bio, struct proc_io_stats *stats, bool i
                  (unsigned long long)(is_read ? delta_kb : 0ULL),
                  (unsigned long long)(is_read ? 0ULL : delta_kb));
     }
+    // FIXME 这里就可以释放stats了
+    kfree(stats); // 释放 stats 内存
     add_log_entry(buf);
     schedule_work(&write_log_work);
 }
@@ -223,29 +226,7 @@ int update_filter_rule(dev_t dev, bool track_r, bool track_w)
 /* ================= /proc 输出 ================= */
 static int proc_show(struct seq_file *m, void *v)
 {
-    int i;
-    struct proc_io_stats *s;
-
-    seq_printf(m, "IO Monitor v3 - Target Device: /dev/%s (%d:%d)\n",
-               get_target_device_name(),
-               MAJOR(get_target_dev()), MINOR(get_target_dev()));
-    seq_printf(m, "Global Read: %lld KB\n", atomic64_read(&total_read_kb));
-    seq_printf(m, "Global Write: %lld KB\n\n", atomic64_read(&total_write_kb));
-    seq_puts(m, "Per-Process Statistics:\n");
-    seq_puts(m, "PID\t\tCommand\t\t\tPPID\t\tPCommand\t\tRead(KB)\tWrite(KB)\n");
-    seq_puts(m, "---\t\t-------\t\t\t----\t\t--------\t\t-----------\t------------\n");
-
-    rcu_read_lock();
-    for (i = 0; i < HASHTABLE_SIZE; i++) {
-        hlist_for_each_entry_rcu(s, &proc_stats_table[i], hash_node) {
-            seq_printf(m, "%-8d\t%-16s\t%-8d\t%-16s\t%lld\t\t%lld\n",
-                       s->pid, s->comm,
-                       s->ppid, s->pcomm,
-                       atomic64_read(&s->read_kb),
-                       atomic64_read(&s->write_kb));
-        }
-    }
-    rcu_read_unlock();
+    
     return 0;
 }
 
@@ -358,7 +339,7 @@ void handle_bio_request(struct bio *bio)
         (!is_read && !rule->track_write))
         return;
 
-    stats = get_proc_stats(task_pid_nr(current));
+    stats = get_proc_stats(task_pid_nr(current)); // FIXME 给日志的应该是新的结构体，而不是以前的，新生成的stats要防止内存泄漏
     write_log_entry(bio, stats, is_read);
 }
 
@@ -370,7 +351,7 @@ int init_io_history(void)
     for (i = 0; i < HASHTABLE_SIZE; i++)
         INIT_HLIST_HEAD(&proc_stats_table[i]);
 
-    INIT_WORK(&write_log_work, write_log_worker);
+    INIT_WORK(&write_log_work, write_log_worker); // 初始化工作队列
 
     ret = create_proc_entry();
     if (ret)

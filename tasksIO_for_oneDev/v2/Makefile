@@ -20,7 +20,7 @@ install:
 	@if [ -n "$(DEVICE)" ]; then \
 		sudo insmod $(MODULE_NAME).ko device=$(DEVICE); \
 	else \
-		sudo insmod $(MODULE_NAME).ko device=sda3; \
+		sudo insmod $(MODULE_NAME).ko device=/dev/sda3; \
 	fi
 
 uninstall:
@@ -38,7 +38,7 @@ help:
 	@echo "Usage:"
 	@echo "  make          - Build module"
 	@echo "  make clean    - Clean build files"
-	@echo "  make install [DEVICE=sdb1] - Install module"
+	@echo "  make install [DEVICE=/dev/sda3] - Install module"
 	@echo "  make uninstall- Uninstall module"
 	@echo "  make reload   - Reload module"
 	@echo "  make stats    - Show IO statistics"

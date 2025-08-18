@@ -5,7 +5,8 @@
         "rcupdate.h": "c",
         "seq_file.h": "c",
         "namei.h": "c",
-        "kprobes.h": "c"
+        "kprobes.h": "c",
+        "io_monitor_v3_main.h": "c"
     },
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/**",

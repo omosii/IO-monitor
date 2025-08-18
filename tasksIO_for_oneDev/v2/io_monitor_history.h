@@ -14,8 +14,8 @@
 #include <linux/blkdev.h>
 
 #define LOG_FILE_PATH        "/tmp/io_monitor.log"
-#define MAX_LOG_ENTRIES      1024
-#define MAX_LOG_ENTRY_SIZE   256
+#define MAX_LOG_ENTRIES      2048 // FIXME 是否存在瓶颈？
+#define MAX_LOG_ENTRY_SIZE   512
 #define HASHTABLE_SIZE       1024
 
 struct proc_io_stats {
