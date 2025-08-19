@@ -14,9 +14,13 @@
 #include "io_monitor_history.h"
 #include "io_monitor_v3_main.h"
 
+/* 前向声明 */
+static int init_slab_caches(void);
+static void destroy_slab_caches(void);
+
 /* ================= 全局状态 ================= */
-static struct hlist_head proc_stats_table[HASHTABLE_SIZE];
-static DEFINE_SPINLOCK(hashtable_lock);
+// static struct hlist_head proc_stats_table[HASHTABLE_SIZE];
+// static DEFINE_SPINLOCK(hashtable_lock);
 
 static struct filter_rule __rcu *current_rule;
 
@@ -32,31 +36,22 @@ static LIST_HEAD(log_entry_list);
 static DEFINE_SPINLOCK(log_list_lock);
 static atomic_t log_entry_count = ATOMIC_INIT(0);
 
+/* Slab缓存 */
+static struct kmem_cache *stats_cache;    // 进程统计结构体缓存
+static struct kmem_cache *log_entry_cache; // 日志条目缓存  
+static struct kmem_cache *log_buf_cache;   // 日志缓冲区缓存
+
 /* 字节转KB(向上取整) */
 #define BYTES_TO_KB(b) (((b) + 1023ULL) / 1024ULL)
 
 /* ================= 进程统计 ================= */
 static struct proc_io_stats *get_proc_stats(pid_t pid)
 {
-    // struct hlist_head *head = &proc_stats_table[pid % HASHTABLE_SIZE];
-    //struct proc_io_stats *stats;
     struct proc_io_stats *new_stats;
-    // unsigned long flags;
-    // bool found = false;
+
     struct task_struct *task, *parent;
 
-    // rcu_read_lock();
-    // hlist_for_each_entry_rcu(stats, head, hash_node) {
-    //     if (stats->pid == pid) {
-    //         found = true;
-    //         break;
-    //     }
-    // }
-    // rcu_read_unlock();
-    // if (found)
-    //     return stats;
-
-    new_stats = kmalloc(sizeof(*new_stats), GFP_ATOMIC);
+    new_stats = kmem_cache_alloc(stats_cache, GFP_ATOMIC); // 使用缓冲池
     if (!new_stats)
         return NULL;
 
@@ -83,16 +78,6 @@ static struct proc_io_stats *get_proc_stats(pid_t pid)
     atomic64_set(&new_stats->read_kb, 0);
     atomic64_set(&new_stats->write_kb, 0);
 
-    // spin_lock_irqsave(&hashtable_lock, flags);
-    // hlist_for_each_entry_rcu(stats, head, hash_node) {
-    //     if (stats->pid == pid) {
-    //         spin_unlock_irqrestore(&hashtable_lock, flags);
-    //         kfree(new_stats);
-    //         return stats;
-    //     }
-    // }
-    // hlist_add_head(&new_stats->hash_node, head);
-    // spin_unlock_irqrestore(&hashtable_lock, flags);
     return new_stats;
 }
 
@@ -103,12 +88,12 @@ static void add_log_entry(char *buffer)
     unsigned long flags;
 
     if (atomic_read(&log_entry_count) >= MAX_LOG_ENTRIES) {
-        kfree(buffer);
+        kmem_cache_free(log_buf_cache, buffer);
         return;
     }
-    entry = kmalloc(sizeof(*entry), GFP_ATOMIC);
+    entry = kmem_cache_alloc(log_entry_cache, GFP_ATOMIC);
     if (!entry) {
-        kfree(buffer);
+        kmem_cache_free(log_buf_cache, buffer);
         return;
     }
     entry->buffer = buffer;
@@ -129,7 +114,7 @@ static char *get_next_log_entry(void)
         entry = list_first_entry(&log_entry_list, struct log_entry, list);
         list_del(&entry->list);
         buf = entry->buffer;
-        kfree(entry);
+        kmem_cache_free(log_entry_cache, entry);
         atomic_dec(&log_entry_count);
     }
     spin_unlock_irqrestore(&log_list_lock, flags);
@@ -154,13 +139,13 @@ static void write_log_worker(struct work_struct *work)
         while ((log_buffer = get_next_log_entry()) != NULL) {
             len = strlen(log_buffer);
             kernel_write(f, log_buffer, len, &pos);
-            kfree(log_buffer);
+            kmem_cache_free(log_buf_cache, log_buffer);
         }
         f->f_op->flock(f, F_UNLCK, NULL);
     } else {
         while ((log_buffer = get_next_log_entry()) != NULL) {
             kernel_write(f, log_buffer, strlen(log_buffer), &pos);
-            kfree(log_buffer);
+            kmem_cache_free(log_buf_cache, log_buffer);
         }
     }
 
@@ -181,7 +166,7 @@ static void write_log_entry(struct bio *bio, struct proc_io_stats *stats, bool i
     if (in_interrupt() || !log_file)
         return;
 
-    buf = kmalloc(MAX_LOG_ENTRY_SIZE, GFP_ATOMIC);
+    buf = kmem_cache_alloc(log_buf_cache, GFP_ATOMIC);
     if (!buf)
         return;
 
@@ -199,7 +184,7 @@ static void write_log_entry(struct bio *bio, struct proc_io_stats *stats, bool i
                  (unsigned long long)(is_read ? 0ULL : delta_kb));
     }
     // FIXME 这里就可以释放stats了
-    kfree(stats); // 释放 stats 内存
+    kmem_cache_free(stats_cache, stats); // 释放 stats 内存 // FIXME
     add_log_entry(buf);
     schedule_work(&write_log_work);
 }
@@ -249,8 +234,8 @@ static void free_pending_log_entries(void)
     spin_lock_irqsave(&log_list_lock, flags);
     list_for_each_entry_safe(e, n, &log_entry_list, list) {
         list_del(&e->list);
-        kfree(e->buffer);
-        kfree(e);
+        kmem_cache_free(log_buf_cache, e->buffer);
+        kmem_cache_free(log_entry_cache, e);
     }
     spin_unlock_irqrestore(&log_list_lock, flags);
 }
@@ -290,13 +275,6 @@ void io_log_read_unlock(void)
     mutex_unlock(&log_mutex);
 }
 
-/* ================= RCU 回调 ================= */
-static void free_proc_stats_rcu(struct rcu_head *rcu)
-{
-    struct proc_io_stats *s = container_of(rcu, struct proc_io_stats, rcu);
-    kfree(s);
-}
-
 /* ================= 对外 bio 处理接口 ================= */
 void handle_bio_request(struct bio *bio)
 {
@@ -316,28 +294,35 @@ void handle_bio_request(struct bio *bio)
         (!is_read && !rule->track_write))
         return;
 
-    stats = get_proc_stats(task_pid_nr(current)); // FIXME 给日志的应该是新的结构体，而不是以前的，新生成的stats要防止内存泄漏
+    stats = get_proc_stats(task_pid_nr(current)); 
     write_log_entry(bio, stats, is_read);
 }
 
 /* ================= 初始化与清理 ================= */
 int init_io_history(void)
 {
-    int i, ret;
+    int ret;  // 移除未使用的 i
 
-    for (i = 0; i < HASHTABLE_SIZE; i++)
-        INIT_HLIST_HEAD(&proc_stats_table[i]);
+    // for (i = 0; i < HASHTABLE_SIZE; i++)
+    //     INIT_HLIST_HEAD(&proc_stats_table[i]);
 
     INIT_WORK(&write_log_work, write_log_worker); // 初始化工作队列
 
+    ret = init_slab_caches();
+    if (ret) {
+        return ret;
+    }
+
     ret = init_log_system();
     if (ret) {
+        destroy_slab_caches();
         return ret;
     }
 
     ret = update_filter_rule(get_target_dev(), true, true);
     if (ret) {
         cleanup_log_system();
+        destroy_slab_caches();
         return ret;
     }
 
@@ -346,21 +331,9 @@ int init_io_history(void)
 
 void cleanup_io_history(void)
 {
-    int i;
-    struct proc_io_stats *s;
-    struct hlist_node *tmp;
 
     cleanup_log_system();
-
-    for (i = 0; i < HASHTABLE_SIZE; i++) {
-        unsigned long flags;
-        spin_lock_irqsave(&hashtable_lock, flags);
-        hlist_for_each_entry_safe(s, tmp, &proc_stats_table[i], hash_node) {
-            hlist_del(&s->hash_node);
-            call_rcu(&s->rcu, free_proc_stats_rcu);
-        }
-        spin_unlock_irqrestore(&hashtable_lock, flags);
-    }
+    destroy_slab_caches();
 
     if (current_rule) {
         struct filter_rule *old = rcu_dereference_protected(current_rule, 1);
@@ -369,4 +342,43 @@ void cleanup_io_history(void)
             call_rcu(&old->rcu, (void (*)(struct rcu_head *))kfree);
         }
     }
+}
+
+/* 初始化Slab缓存 */
+static int init_slab_caches(void)
+{
+    stats_cache = kmem_cache_create("io_stats_cache",
+                                  sizeof(struct proc_io_stats),
+                                  0, SLAB_HWCACHE_ALIGN, NULL);
+    if (!stats_cache)
+        goto fail_stats;
+
+    log_entry_cache = kmem_cache_create("io_log_entry_cache",
+                                      sizeof(struct log_entry),
+                                      0, SLAB_HWCACHE_ALIGN, NULL);
+    if (!log_entry_cache)
+        goto fail_entry;
+
+    log_buf_cache = kmem_cache_create("io_log_buf_cache",
+                                    MAX_LOG_ENTRY_SIZE,
+                                    0, SLAB_HWCACHE_ALIGN, NULL);
+    if (!log_buf_cache)
+        goto fail_buf;
+
+    return 0;
+
+fail_buf:
+    kmem_cache_destroy(log_entry_cache);
+fail_entry:  
+    kmem_cache_destroy(stats_cache);
+fail_stats:
+    return -ENOMEM;
+}
+
+/* 销毁Slab缓存 */
+static void destroy_slab_caches(void)
+{
+    kmem_cache_destroy(log_buf_cache);
+    kmem_cache_destroy(log_entry_cache); 
+    kmem_cache_destroy(stats_cache);
 }

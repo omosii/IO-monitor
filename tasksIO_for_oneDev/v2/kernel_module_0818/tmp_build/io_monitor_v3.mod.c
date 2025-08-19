@@ -45,6 +45,7 @@ __used __section("__versions") = {
 	{ 0x37a0cba, "kfree" },
 	{ 0x71ba2490, "pcpu_hot" },
 	{ 0xeae94adb, "seq_lseek" },
+	{ 0xe83eaa9, "kmem_cache_create" },
 	{ 0x34db050b, "_raw_spin_lock_irqsave" },
 	{ 0x75743af2, "path_put" },
 	{ 0xcbd4898c, "fortify_panic" },
@@ -53,12 +54,13 @@ __used __section("__versions") = {
 	{ 0x122c3a7e, "_printk" },
 	{ 0xf0fdf6cb, "__stack_chk_fail" },
 	{ 0xa916b694, "strnlen" },
-	{ 0x87a21cb3, "__ubsan_handle_out_of_bounds" },
+	{ 0x6e20c6b7, "kmem_cache_alloc" },
 	{ 0x718b0e91, "fput" },
 	{ 0x8818b661, "pid_task" },
 	{ 0x2469810f, "__rcu_read_unlock" },
 	{ 0x4c03a563, "random_kmalloc_seed" },
 	{ 0x4dfa8d4b, "mutex_lock" },
+	{ 0x7301b4fc, "kmem_cache_free" },
 	{ 0x9ec6ca96, "ktime_get_real_ts64" },
 	{ 0xbcab6ee6, "sscanf" },
 	{ 0xd35cce70, "_raw_spin_unlock_irqrestore" },
@@ -88,6 +90,7 @@ __used __section("__versions") = {
 	{ 0xeb233a45, "__kmalloc" },
 	{ 0x37a99944, "kmalloc_caches" },
 	{ 0xb2c57545, "kernel_write" },
+	{ 0xbb466c0c, "kmem_cache_destroy" },
 	{ 0x2d3385d3, "system_wq" },
 	{ 0xc6227e48, "module_layout" },
 };
@@ -95,4 +98,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "F322DDE4A677C9630F96D3C");
+MODULE_INFO(srcversion, "796CCDF7B774CF0392735DF");
